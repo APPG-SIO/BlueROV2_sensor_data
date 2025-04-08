@@ -1,0 +1,345 @@
+import re
+import struct
+
+# ================================================================
+# Section: Defining struct format codes for unpacking binary data
+# ================================================================
+
+U8 = "B"  # Unsigned 8-bit integer
+U16 = "H"  # Unsigned 16-bit integer
+U32 = "I"  # Unsigned 32-bit integer
+FLOAT = "f"  # 4-byte float
+CHAR = "s"  # 1-byte character
+class ARR:
+    """
+    Class to represent an array of other data types.
+
+    Args:
+        data_type: The data type of the array elements (e.g., U8, U16, CHAR).
+        length: The number of elements in the array. Defaults to "TBD" if not specified,
+                meaning the length will be dynamically determined based on the available data.
+
+    Example usage:
+        ARR(CHAR, 2)....indicates a 2-character string
+        ARR(U16)........indicates an array of 16-bit integers, of undetermined length.  
+                        These must come at the end of a data chunk, where the amount of data left 
+                        is passed to dynamic_format_code() to set the final array length.
+    """
+    def __init__(self, data_type, length="TBD"):
+        self.data_type = data_type
+        self.length = length  # Number of elements, not necessarily number of bytes.
+
+    def dynamic_format_code(self, max_size):
+        """Get the properly sized format code for the array."""
+        if self.length == "TBD":
+            self.length = max_size // struct.calcsize(self.data_type)
+        return f"{self.length}{self.data_type}"
+    
+
+# ===================================================================
+# Section: Defining function to unpack binary data of a given format
+# ===================================================================
+
+def unpack_from_format(format_dict, data):
+    """
+    Unpack binary data into usable form based on the provided format dictionary.
+
+    Args:
+        format_dict: A dictionary mapping attribute names to struct format codes or ARR instances.
+        data: The binary data to unpack.
+
+    Returns:
+        dict: The unpacked data, in {attribute_name : extracted_value} pairs
+    """
+    unpacked_data = {}
+    pos = 0
+    for attribute_name, format_code in format_dict.items():
+
+        if isinstance(format_code, ARR):
+            fmt = '<' + format_code.dynamic_format_code(len(data) - pos)
+            size = struct.calcsize(fmt)
+            value = struct.unpack(fmt, data[pos:pos+size])
+            if format_code.data_type == CHAR:
+                # The value is a string
+                value = value[0].decode('ascii').rstrip("\x00")
+            else:
+                # The value is a true array 
+                value = list(value)
+        else:
+            fmt = '<' + format_code
+            size = struct.calcsize(fmt)
+            value = struct.unpack(fmt, data[pos:pos+size])[0]
+
+        unpacked_data[attribute_name] = value
+        pos += size
+    
+    if pos != len(data) or len(unpacked_data) != len(format_dict):
+        raise ValueError(f"Format does not match data size: {len(data)} bytes")
+    return unpacked_data
+
+
+# ===============================================================
+# Section: Defining classes to represent Ping Protocol messages
+# ===============================================================
+
+class Header:
+    """
+    Class to represent a packet header (including initial 'BR').
+    
+    Args:
+        header_data: The 8-byte binary data that will be translated into usable form
+            and loaded into the attributes defined in FORMAT.  For details on the 
+            Ping Protocol header format, see https://docs.bluerobotics.com/ping-protocol/ 
+    """
+
+    FORMAT = {
+        "br": ARR(CHAR, 2),     # Two bytes for the characters 'BR', hex value 0x42 0x52
+        "payload_length": U16,  # Two bytes for an integer representing the payload length (in bytes)
+        "message_id": U16,      # Two bytes for an integer representing the message ID (the message type)
+        "sender_id": U8,        # One byte for an integer representing the sender ID (typically 1 or 2 for the sidescan sonars)
+        "receiver_id": U8,      # One byte for an integer representing the receiver ID (typically 0 for the topside computer)
+    }
+    
+    def __init__(self, header_data):
+        # Translate the binary data into usable form, and load it into this object's attributes
+        unpacked_data = unpack_from_format(self.FORMAT, header_data)
+        for attribute, value in unpacked_data.items():
+            setattr(self, attribute, value)
+
+        # Make sure the first two bytes are 'BR'
+        if self.br != 'BR':
+            raise ValueError(f"Invalid header signature: {self.br}")
+    
+    def __repr__(self):
+        return f"Header(br='{self.br}', payload_length={self.payload_length}, message_id={self.message_id}, sender_id={self.sender_id}, receiver_id={self.receiver_id})"
+
+
+class Payload:
+    """
+    Base class for all payload messages.
+    
+    To instantiate, use Payload.create(message_id, payload_data) instead of Payload().
+    These will return an object from the appropriate message subclass (e.g. NackMessage 
+    or OsMonoProfileMessage), with all of the attributes automatically unpacked from the
+    binary data and saved in the object.
+
+    Example usage:
+        payload = Payload.create(message_id=2198, payload_data)
+        print("Ping number is", payload.ping_number)
+        print("Ping frequency is", payload.ping_hz)
+
+    To recap: any attribute included in the format dictionary of the relevant subclass
+    will be saved in the Payload object as an attribute of the SAME NAME.
+    """
+
+    @staticmethod
+    def create(message_id, payload_data):
+        """Factory method to instantiate the correct subclass."""
+        if message_id == 2:
+            return NackMessage(payload_data)
+        elif message_id == 10:
+            return JSONMessage(payload_data)
+        elif message_id == 2198:
+            return OsMonoProfileMessage(payload_data)
+        # Uncomment the following (and replace "place_id_here") to add your own message type.
+        # elif message_id == place_id_here:
+        #     return ImplementYourOwnMessage(payload_data)
+        else:
+            return Payload(payload_data, message_id)  # Default to base class
+
+    def __init__(self, payload_data, message_id, message_type="Unkown message type", format=None):
+        self.length = len(payload_data)  # In bytes
+        self.message_id = message_id 
+        self.message_type = message_type
+        if format is not None:
+            # Translate the binary data into usable form, and load it into this object's attributes
+            unpacked_data = unpack_from_format(format, payload_data)
+            for attribute, value in unpacked_data.items():
+                setattr(self, attribute, value)
+    
+    def __repr__(self):
+        attrs = ", ".join(
+            f"{key}='{value}'" if isinstance(value, str) else
+            f"{key}=[{len(value)} values]" if isinstance(value, (list, tuple, dict)) else
+            f"{key}={value}"
+            for key, value in vars(self).items()
+        )
+        return f"{self.__class__.__name__}({attrs})"
+
+
+class Packet:
+    """
+    Class to represent a packet (header + payload + checksum).
+    
+    Args:
+        pos: The header start index within the provided data.
+        data: The data that contains the packet.
+    """
+    
+    def __init__(self, pos, data):
+        self.pos = pos
+        self.header = Header(data[pos:pos + 8])
+        self.payload = Payload.create(self.header.message_id, data[pos + 8:pos + 8 + self.header.payload_length])
+        self.checksum = struct.unpack("<H", data[pos + 8 + self.header.payload_length:pos + 8 + self.header.payload_length + 2])[0]
+        self.corrupted = self.checksum != self.compute_checksum(data, pos, self.header.payload_length)    
+    
+    def compute_checksum(self, data, pos, payload_length):
+        """Compute checksum by summing header + payload (excluding checksum)."""
+        packet_data = data[pos:pos + 8 + payload_length]  # Header + Payload
+        return sum(packet_data) & 0xFFFF  # Truncate to 16 bits
+
+    def __repr__(self):
+        return f"Packet(header={self.header}, payload={self.payload}, checksum={self.checksum})"
+    
+
+# ================================================
+# Section: Defining Ping Protocol message types
+# ================================================
+
+class NackMessage(Payload):
+    """Subclass for message ID 2, representing a NACK (not acknowledged) message."""
+
+    MESSAGE_ID = 2
+    MESSAGE_TYPE = "Not acknowledged"
+    FORMAT = {
+        "nacked_id": U16,  # Two bytes for the message ID that was not acknowledged
+        "nack_message": ARR(CHAR)  # Remaining bytes as ASCII text indicating NACK condition
+    }
+    
+    def __init__(self, payload_data):
+        super().__init__(payload_data, message_id=self.MESSAGE_ID, 
+                         message_type=self.MESSAGE_TYPE, format=self.FORMAT)
+    
+
+class JSONMessage(Payload):
+    """Subclass for message ID 10, representing a JSON header message."""
+    
+    MESSAGE_ID = 10
+    MESSAGE_TYPE = "JSON header"
+    FORMAT = {
+        "JSON_message": ARR(CHAR)  # Remaining bytes as ASCII text giving JSON header message
+    }
+    
+    def __init__(self, payload_data):
+        super().__init__(payload_data, message_id=self.MESSAGE_ID, 
+                         message_type=self.MESSAGE_TYPE, format=self.FORMAT)
+    
+
+class OsMonoProfileMessage(Payload):
+    """Subclass for message ID 2198, representing an os_mono_profile message for the Omniscan 450."""
+    
+    MESSAGE_ID = 2198
+    MESSAGE_TYPE = "Omniscan 450 Mono Profile"
+    FORMAT = {
+        "ping_number": U32,         # Sequentially assigned from 0 at power up
+        "start_mm": U32,            # The beginning of the scan region in mm from the transducer
+        "length_mm": U32,           # The length of the scan region in mm
+        "timestamp_ms": U32,        # Timestamp in milliseconds since power-up
+        "ping_hz": U32,             # Frequency of the acoustic signal in Hz
+        "gain_index": U16,          # Gain index (0-7)
+        "num_results": U16,         # Length of pwr_results array
+        "sos_dmps": U16,            # Speed of sound, decimeters/sec	
+        "channel_number": U8,
+        "reserved": U8,
+        "pulse_duration_sec": FLOAT,
+        "analog_gain": FLOAT,
+        "max_pwr_db": FLOAT,
+        "min_pwr_db": FLOAT,
+        "transducer_heading_deg": FLOAT,
+        "vehicle_heading_deg": FLOAT,
+        "pwr_results": ARR(U16)     # An array of return strength measurements taken 
+                                    # at regular intervals across the scan region. 
+                                    # The first element is the closest measurement to the sensor, 
+                                    # and the last element is the farthest measurement in the scanned range. 
+                                    # Power results scaled from min_pwr_db to max_pwr_db.
+                                    # Length is derived from payload_length in the header.	
+    }
+    
+    def __init__(self, payload_data):
+        super().__init__(payload_data, message_id=self.MESSAGE_ID, 
+                         message_type=self.MESSAGE_TYPE, format=self.FORMAT)
+
+
+class ImplementYourOwnMessage(Payload):
+    """Subclass for your custom message ID, representing a custom message."""
+    # Note: you must also make the indicated 
+    # alterations to Payload.create()
+
+    MESSAGE_ID = 99999  # Replace with your custom message ID
+    MESSAGE_TYPE = "Your custom message type"
+    FORMAT = {
+        "your_field1": U16,  # e.g. Two bytes for your custom field 1
+        "your_field2": U8,   # e.g. One byte for your custom field 2
+        "your_message": ARR(CHAR)  # e.g. Remaining bytes as ASCII text giving your custom message data
+    }
+    
+    # No need to change __init__ at all!
+    def __init__(self, payload_data):
+        super().__init__(payload_data, message_id=self.MESSAGE_ID, 
+                         message_type=self.MESSAGE_TYPE, format=self.FORMAT)
+        
+    
+# ==========================================================================
+# Section: Defining function to extract message packets from a .svlog file!
+# ==========================================================================
+
+def parse_svlog_file(filename, included_ids=None, excluded_ids=None, max_packets=None):
+    with open(filename, "rb") as f:
+        data = f.read()  # Read the entire binary file
+
+    pattern = re.compile(rb"\x42\x52")  # Match "BR"
+    positions = [match.start() for match in pattern.finditer(data)]
+
+    packets = []
+    for pos in positions:  
+        try:
+            packet = Packet(pos, data)
+            if packet.corrupted:
+                print(f"Invalid checksum for packet at byte {pos}")
+                continue
+            if included_ids is not None and packet.header.message_id not in included_ids:  # Only include wanted message IDs
+                continue
+            if excluded_ids is not None and packet.header.message_id in excluded_ids:  # Don't include unwanted message IDs
+                continue
+            packets.append(packet)
+            if max_packets is not None and len(packets) == max_packets:  # Cap the number of packets included in the output
+                break
+        except ValueError as e:
+            print(f"Error parsing packet at byte {pos}: {e}")
+    
+    return packets
+
+
+
+
+if __name__ == "__main__":
+    # Example usage
+    filename = "data.svlog"  # Replace with your binary file
+    with open(filename, "rb") as f:
+        data = f.read()  # Read the entire binary file
+
+    pattern = re.compile(rb"\x42\x52")  # Match "BR"
+    positions = [match.start() for match in pattern.finditer(data)]
+
+    packets = []
+    for pos in positions:  
+        try:
+            packet = Packet(pos, data)
+            if packet.header.message_id not in [2, 10, 2198]:  # Only include wanted message IDs
+                continue
+            packets.append(packet)
+            if len(packets) == 10:  # Limit to first 10 packets for demonstration
+                break
+        except ValueError as e:
+            print(f"Error parsing packet at byte {pos}: {e}")
+    
+    output_filename  = "message_logs.txt"  # Output file name 
+    with open(output_filename, "w") as output_file:
+        output_file.truncate(0)  # Erase the file content before writing
+        output_file.write(f"Message logs:\n\n")
+        for packet in packets:
+            output_file.write(f"Packet at byte {packet.pos}:\n")
+            output_file.write(f"  Header: {packet.header}\n")
+            output_file.write(f"  Payload: {packet.payload}\n")
+            output_file.write(f"  Checksum: {packet.checksum}\n")
+            output_file.write(f"  Corrupted: {packet.corrupted}\n\n")
