@@ -1,6 +1,6 @@
-# IMU Data
+# README_telemetry
 
-**This page explains how to extract MAVLINK messages and data**
+**This page explains how to extract MAVLINK messages and data from telemetry .tlog files**
 
 The IMU data we currently have is in .tlog file format, which are output from QGroundControl. The data is pulled by ArduSub, which is a branch of ArduPilot — firmware that runs on the onboard computer and helps with control of the ROV. 
 
