@@ -15,8 +15,8 @@ Note that the first file is from Blue Robotic's ping-viewer repository, **not** 
 - [decodePing1D_2csv.py](decodePing1D_2csv.py)
 - [decodePing360_2csv.py](decodePing360_2csv.py)
 - [folderLoop.py](folderLoop.py)
-      
-      
+
+
 Make sure the files you just downloaded are all in the **same** folder, otherwise they will not be able to find each other with the existing code.
 
 ⚠️ **if you have ping1D and ping360 files together in a folder, you can sort them using the following python script.**
