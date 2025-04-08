@@ -20,7 +20,8 @@ Use the following folders to help you parse the data from the onboard sensors
 - [Omniscan450 - Side scan sonar](omniscan450)
 - [Telemetry](telemetry)
 
-## Deployments
+## APPG Deployments
+For data contact coanderson@ucsd.edu
 - :sunny: Keck pool 3/6/2025
 - :speedboat: Beyster 3/24/2025
 - :ship: Shana Rose 4/18/2025
