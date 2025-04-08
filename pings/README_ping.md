@@ -1,4 +1,4 @@
-# readme_ping
+# README_ping
 
 ### Useful links:
 - [Blue Robotics - Access ping360 data for post processing](https://discuss.bluerobotics.com/t/access-ping360-data-for-post-processing-python/10416/2)
