@@ -3,9 +3,9 @@
 ### Useful links:
 - [Blue Robotics - Access ping360 data for post processing](https://discuss.bluerobotics.com/t/access-ping360-data-for-post-processing-python/10416/2)
 - [decodePing1D_2csv.py](decodePing1D_2csv.py)
-- [decodePing360_2csv.py](../decodePing360_2csv.py)
-- [folderLoop.py](../folderLoop.py)
-- [sortPingFiles.py](../sortPingFiles.py)
+- [decodePing360_2csv.py](decodePing360_2csv.py)
+- [folderLoop.py](folderLoop.py)
+- [sortPingFiles.py](sortPingFiles.py)
 
       
 
