@@ -41,8 +41,7 @@ python3 decodePing360_2csv.py path/to/binfile.bin -o path/to/csvfilename.csv
 ### To process multiple 360 .bin files into .csv’s
 
 1. Navigate to the folder with the files you just downloaded
-2. Enter the following into your terminal
-    1. It will put all of the csv’s into an adjacent folder to the bin folder, called csv
+2. Enter the following into your terminal (It will put all of the csv’s into an adjacent folder to the bin folder, called csv)
 
 ```bash
 cpython3 folderLoop.py path/to/folder/with/bin/files --script decodePing360_2csv.py
@@ -53,3 +52,24 @@ cpython3 folderLoop.py path/to/folder/with/bin/files --script decodePing360_2csv
 
 
 # Ping 1D
+### To process a single ping1D .bin file into a .csv
+
+1. In your terminal, navigate to the folder with the files you just downloaded
+2. Enter the following into your terminal
+
+```bash
+python3 decodePing1D_2csv.py path/to/binfile.bin -o path/to/csvfilename.csv
+```
+
+### To process multiple ping .bin files into .csv’s
+
+1. Navigate to the folder with the files you just downloaded
+2. Enter the following into your terminal (It will put all of the csv’s into an adjacent folder to the bin folder, called csv)
+
+```bash
+python3 folderLoop.py path/to/folder/with/bin/files --script decodePing1D_2csv.py
+```
+
+### You should get a CSV formatted like this:
+<img width="1029" alt="Screenshot 2025-03-21 at 3 41 27 PM" src="https://github.com/user-attachments/assets/e96b05ea-2e1e-4aab-b4f0-bfb85231e078" />
+
