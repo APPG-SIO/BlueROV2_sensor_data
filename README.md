@@ -16,4 +16,6 @@ In addition to the onboard sensors, we hope to make SLAM more reliable and geo-c
 
 ## Decoding the raw data
 Use the following folders to help you parse the data from the onboard sensors
-[a relative link](pings/readme_pings.md)
+[Pings](pings/readme_ping.md)
+[Omniscan450 - Side scan sonar](omniscan450)
+
