@@ -2,13 +2,21 @@
 
 ### Useful links:
 - [Blue Robotics - Access ping360 data for post processing](https://discuss.bluerobotics.com/t/access-ping360-data-for-post-processing-python/10416/2)
-- 
+- [decodePing1D_2csv.py](../decodePing1D_2csv.py)
+- [decodePing360_2csv.py](../decodePing360_2csv.py)
+- [folderLoop.py](../folderLoop.py)
+- [sortPingFiles.py](../sortPingFiles.py)
+
+      
 
 ## Overview
 
 This will walk you through how to parse .bin files from the Ping360 and Ping 1D (Echosounder/altimeter) into readable .csv files. You are going to need to make sure you are running a python system of atleast 3.11 (I think)
 
 ### Download the following files
+Note that the first file is from Blue Robotic's ping-viewer repository, **not** in this ping folder
+- [decode_sensor_binary_log.py](https://github.com/bluerobotics/ping-viewer/blob/master/examples/decode_sensor_binary_log.py)
+- 
 
 
 Make sure the files you just downloaded are all in the **same** folder, otherwise they will not be able to find each other with the existing code.
