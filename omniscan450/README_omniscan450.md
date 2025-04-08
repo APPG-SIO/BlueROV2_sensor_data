@@ -21,11 +21,13 @@ All the hard work has been done for you here. If you want to, you could download
 In terminal, navigate to the folder containing the files you just downloaded and you can run csv_writer.py, which calls on svlog_parser.py with the following line of code
 
 ```bash
-python3 csv_write.py -h #tells you the argument options, but for easiness sake I'll give you a full example
-python3 csv_write.py path/to/input_file.svlog path/to/output_file.csv
-# and if you want to constrain the parsing to only certain message types (2, 10, 2198 are the desirable ones it turns out) then you can do that with --included_IDs
+python3 csv_write.py -h #tells you the argument options, but for easiness' sake I'll tell you here
+# If you want to constrain the parsing to only certain message types (2, 10, 2198 are the desirable ones it turns out) then you can do that with --included_IDs
 # (and the opposite for IDs you don't want with --excluded_IDs)
 # if you only want the first 10 messages, you can include that after --max_packets
+
+# The following is a full example of what you might type
+python3 csv_write.py --included_IDs 2,10,2198 --max_packets 100 path/to/input_file.svlog path/to/output_file.csv
 ```
 
 
