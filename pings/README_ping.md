@@ -2,7 +2,6 @@
 
 ### Useful links:
 - [Blue Robotics - Access ping360 data for post processing](https://discuss.bluerobotics.com/t/access-ping360-data-for-post-processing-python/10416/2)
-- 
       
 
 ## Overview
@@ -21,7 +20,7 @@ Make sure the files you just downloaded are all in the **same** folder, otherwis
     
     
 
-⚠️ **if you have ping1D and ping360 files together in a folder, you can sort them using the following python script.**
+⚠️  ** If you have ping1D and ping360 files together in a folder, you can sort them using the following python script.**
 - [sortPingFiles.py](sortPingFiles.py)
 
 *You’ll need to change the paths to the folders in the script after you download, it currently has my folder paths*
