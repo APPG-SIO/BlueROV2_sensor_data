@@ -91,3 +91,40 @@ SYS_STATUS
 ## Running multiple files
 
 To run multiple files, you can run the following code:
+```python
+import os
+import subprocess
+
+# Set your input and output folder paths
+INPUT_FOLDER = "path/to/tlog/files"
+OUTPUT_FOLDER = "path/to/output/csv"
+
+# Ensure the output directory exists
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# Find all .tlog files in the input directory
+tlog_files = [f for f in os.listdir(INPUT_FOLDER) if f.endswith(".tlog")]
+
+# Path to mavlogdump.py (if not in PATH, set the full path here)
+MAVLOGDUMP_CMD = "mavlogdump.py"
+
+# Process each .tlog file
+for tlog_file in tlog_files:
+    input_file_path = os.path.join(INPUT_FOLDER, tlog_file)
+    output_file_path = os.path.join(OUTPUT_FOLDER, f"{os.path.splitext(tlog_file)[0]}.csv")
+
+    # Run mavlogdump.py to convert the file
+    command = [
+        MAVLOGDUMP_CMD,
+        "--format", "csv",
+        "--types", "TIMESYNC,RAW_IMU,ATTITUDE,SCALED_IMU2",
+        input_file_path
+    ]
+
+    try:
+        with open(output_file_path, "w") as output_file:
+            subprocess.run(command, stdout=output_file, check=True)
+        print(f"Successfully converted: {tlog_file} -> {output_file_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error converting {tlog_file}: {e}")
+```
