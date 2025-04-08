@@ -11,8 +11,14 @@ This will walk you through how to parse .bin files from the Ping360 and Ping 1D 
 ### Download the following files
 
 
-Make sure they are all in the **same** folder, otherwise they will not be able to find each other with the existing code.
+Make sure the files you just downloaded are all in the **same** folder, otherwise they will not be able to find each other with the existing code.
 
+⚠️ **if you have ping1D and ping360 files together in a folder, you can sort them using the following python script.**
+
+- You’ll need to change the paths to the folders in the script after you download, it currently has my folder paths
+- Run the code however you typically like to run python files
+
+# Ping 360
 ### To process a single 360 .bin file into a .csv
 
 1. In your terminal, navigate to the folder with the files you just downloaded
@@ -32,7 +38,8 @@ python3 decodePing360_2csv.py path/to/binfile.bin -o path/to/csvfilename.csv
 cpython3 folderLoop.py path/to/folder/with/bin/files --script decodePing360_2csv.py
 ```
 
-⚠️ **if you have ping1D and ping360 files together in a folder, you can sort them using the following python script.**
+### You should get a CSV formatted like this:
+<img width="1361" alt="Screenshot 2025-03-17 at 12 45 53 PM" src="https://github.com/user-attachments/assets/ddce93e7-889d-4001-b0fc-55b41d24e2d4" />
 
-- You’ll need to change the paths to the folders in the script after you download, it currently has my folder paths
-- Run the code however you typically like to run python files
+
+# Ping 1D
