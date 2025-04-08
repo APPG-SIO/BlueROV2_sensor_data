@@ -20,10 +20,10 @@ Make sure the files you just downloaded are all in the **same** folder, otherwis
     
     
 
-### ⚠️ If you have ping1D and ping360 files together in a folder, you can sort them using the following python script.
+### ⚠️ If you have ping1D and ping360 files together in a folder, you can sort them using the following python script:
 - [sortPingFiles.py](sortPingFiles.py)
 
-*You’ll need to change the paths to the folders in the script after you download, it currently has my folder paths.*
+Open it in your favorite text editor. *You’ll need to change the paths to the folders in the script after you download, it currently has my folder paths.*
 Run the code however you typically like to run python files
     
 
