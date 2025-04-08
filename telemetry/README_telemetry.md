@@ -1,11 +1,6 @@
 # IMU Data
 
-<aside>
-💡
-
-This page explains how to extract MAVLINK messages and data
-
-</aside>
+**This page explains how to extract MAVLINK messages and data**
 
 The IMU data we currently have is in .tlog file format, which are output from QGroundControl. The data is pulled by ArduSub, which is a branch of ArduPilot — firmware that runs on the onboard computer and helps with control of the ROV. 
 
@@ -90,7 +85,7 @@ SYS_STATUS
 
 ## Running multiple files
 
-To run multiple files, you can run the following code:
+To run multiple files, you can run the following code, modifying the --types you want, and the input and output folders
 ```python
 import os
 import subprocess
@@ -128,3 +123,6 @@ for tlog_file in tlog_files:
     except subprocess.CalledProcessError as e:
         print(f"Error converting {tlog_file}: {e}")
 ```
+
+## Interpreting the files
+[See this MAVLINK page](https://mavlink.io/en/messages/common.html)
