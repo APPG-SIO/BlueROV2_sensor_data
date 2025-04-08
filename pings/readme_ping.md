@@ -18,6 +18,9 @@ Make sure the files you just downloaded are all in the **same** folder, otherwis
 - You’ll need to change the paths to the folders in the script after you download, it currently has my folder paths
 - Run the code however you typically like to run python files
 
+
+    
+
 # Ping 360
 ### To process a single 360 .bin file into a .csv
 
