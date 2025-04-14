@@ -23,7 +23,7 @@ It is a binary file in a format created by Cerulean Sonar, which is similar to (
 
 ## Using the files above is simple enough
 
-[svlog_parser.py](svlog_parser.py) is doing the heavy lifting here. It takes the binary svlog files and outputs all the instances of a message type (or types) that you ask it to between the omniscan450(s) and the computer to a text file. If you would like a text file, you can run this code directly in something like Visual Studio code and change the input file name at the very bottom of the script under main to the script you would like it to parse. The script is currently configured to output the text file to message_logs.txt. You can change this too.
+[svlog_parser.py](svlog_parser.py) is doing the heavy lifting here. It takes the binary svlog files and outputs all the instances of a message type (or types) that you ask it to to a text file. If you would like a text file, you can run this code directly in something like Visual Studio code and change the input file name at the very bottom of the script under main to the script you would like it to parse. The script is currently configured to output the text file to message_logs.txt. You can change this too.
 
 If you would like a csv of the messages, you can run [csv_writer.py](csv_writer.py) from the terminal, which calls on svlog_parser.py with the following line of code
 
