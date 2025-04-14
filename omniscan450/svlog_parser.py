@@ -352,7 +352,7 @@ if __name__ == "__main__":
     filename = "2025-03-24-12-14.svlog"  # Replace with your binary file
     packets = parse_svlog_file(filename)
     
-    output_filename  = "message_log_apr14.txt"  # Output file name 
+    output_filename  = "message_log.txt"  # Output file name 
     with open(output_filename, "w") as output_file:
         output_file.truncate(0)  # Erase the file content before writing
         output_file.write(f"Message logs:\n\n")
