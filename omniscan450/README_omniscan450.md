@@ -42,9 +42,10 @@ The file that you should have now is pretty good. It tells you...
 - Receiver ID: tells you which device recieves the message (should be 0, which means the computer is recieving it)
 - Payload Data: is the raw message, contains relevant data and time stamps etc.
 
-It is likely you want to decode the payload even more. You can use [decode_payload_csv.py](decode_payload_csv.py) for this. Open the file in your favorite text editor (I use Visual Studio Code) and edit the 
-
-<img width="1406" alt="image" src="https://github.com/user-attachments/assets/9d4fb6d1-06f6-45f4-8929-47294e9a4983" />
+It is likely you want to decode the payload even more. *If you care about 2198 (data) messages, then you can continue with the following code:*
 
 
-# :construction: the rest of this page is under construction for now
+You can use [decode_payload_csv.py](decode_payload_csv.py) for this. Open the file in your favorite text editor (I use Visual Studio Code) and edit the code to suit your needs. Right now it is configured to only look and decode the payload for rows in which the Message_ID is 2198 and Sender_ID is 2. *It is likely you will need to change these parameters!*
+
+
+### :construction: the rest of this page is under construction for now
