@@ -17,8 +17,8 @@ All the hard work has been done for you here. If you want to, you could download
 It is a binary file in a format created by Cerulean Sonar, which is similar to (but not the same as) the Ping Protocol format developed by Blue Robotics. It is simply a record of all of the messages that the Omniscan450s and computer send to eachother during the recorded data session. There are tons of message types; the messages are not just data. So, you have to do some sifting. 
 
 ### Download the following files
-- [csv_writer.py](csv_writer.py)
 - [svlog_parser.py](svlog_parser.py)
+-  [csv_writer.py](csv_writer.py)
 - [decode_payload_csv.py](decode_payload_csv.py)
 
 ## Using the files above is simple enough
@@ -41,17 +41,17 @@ Now, this might be all you need to do! If so, congrats. You may read no further.
 
 ## Decoding further
 The file that you should have now is pretty good. It tells you...
-- Packet Position: tells you what byte number the packet (message) was found at
-- Message ID: tells you what type of message it is. The ones we mostly care about are 10 and 2198.
-- Message Type: tells you what type of information the payload contains
-- Sender ID: tells you which device sent the message (if you have more than one sonar device hooked up, this will be relevant)
-- Receiver ID: tells you which device recieves the message (should be 0, which means the computer is recieving it)
-- Payload Data: is the raw message, contains relevant data and time stamps etc.
+- **Packet Position:** tells you what byte number the packet (message) was found at
+- **Message ID:** tells you what type of message it is. The ones we mostly care about are 10 and 2198.
+- **Message Type:** tells you what type of information the payload contains
+- **Sender ID:** tells you which device sent the message (if you have more than one sonar device hooked up, this will be relevant)
+- **Receiver ID:** tells you which device recieves the message (should be 0, which means the computer is recieving it)
+- **Payload Data:** is the raw message, contains relevant data and time stamps etc.
 
 It is likely you want to decode the payload even more. *If you care about 2198 (data) messages, then you can continue with the following code:*
 
 
-You can use [decode_payload_csv.py](decode_payload_csv.py) to extract the data messages further. Open the file in your favorite text editor (I use Visual Studio Code) and edit the code to suit your needs. Right now it is configured to only look and decode the payload for rows in which the Message_ID is 2198 and Sender_ID is 2. *It is likely you will need to change these parameters!* If you have just one Omniscan450, then you will likely only have Sender_ID = 1. To use this file go to your terminal and type something like the following:
+You can use [decode_payload_csv.py](decode_payload_csv.py) to extract the data payload messages further. Open the file in your favorite text editor and edit the code to suit your needs. Right now it is configured to only look and decode the payload column for rows in which the Message_ID is 2198 and Sender_ID is 2. *It is likely you will need to change these parameters!* If you have just one Omniscan450, then you will likely only have Sender_ID = 1. To use this file go to your terminal and type something like the following:
 
 ```bash
 python3 decode_payload_csv.py path/to/input.csv path/to/output_csv_payload_extracted.csv
