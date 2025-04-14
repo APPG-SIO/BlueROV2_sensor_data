@@ -45,7 +45,12 @@ The file that you should have now is pretty good. It tells you...
 It is likely you want to decode the payload even more. *If you care about 2198 (data) messages, then you can continue with the following code:*
 
 
-You can use [decode_payload_csv.py](decode_payload_csv.py) for this. Open the file in your favorite text editor (I use Visual Studio Code) and edit the code to suit your needs. Right now it is configured to only look and decode the payload for rows in which the Message_ID is 2198 and Sender_ID is 2. *It is likely you will need to change these parameters!*
+You can use [decode_payload_csv.py](decode_payload_csv.py) to extract the data messages further. Open the file in your favorite text editor (I use Visual Studio Code) and edit the code to suit your needs. Right now it is configured to only look and decode the payload for rows in which the Message_ID is 2198 and Sender_ID is 2. *It is likely you will need to change these parameters!* If you have just one Omniscan450, then you will likely only have Sender_ID = 1. To use this file go to your terminal and type something like the following:
+
+```bash
+python3 decode_payload_csv.py path/to/input.csv path/to/output_csv_payload_extracted.csv
+```
 
 
-### :construction: the rest of this page is under construction for now
+
+## :construction: the rest of this page is under construction for now
