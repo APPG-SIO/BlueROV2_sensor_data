@@ -10,31 +10,27 @@ U16 = "H"  # Unsigned 16-bit integer
 U32 = "I"  # Unsigned 32-bit integer
 FLOAT = "f"  # 4-byte float
 CHAR = "s"  # 1-byte character
-class ARR:
-    """
-    Class to represent an array of other data types.
 
-    Args:
-        data_type: The data type of the array elements (e.g., U8, U16, CHAR).
-        length: The number of elements in the array. Defaults to "TBD" if not specified,
-                meaning the length will be dynamically determined based on the available data.
+"""
+    Important notes:
 
-    Example usage:
-        ARR(CHAR, 2)....indicates a 2-character string
-        ARR(U16)........indicates an array of 16-bit integers, of undetermined length.  
-                        These must come at the end of a data chunk, where the amount of data left 
-                        is passed to dynamic_format_code() to set the final array length.
-    """
-    def __init__(self, data_type, length="TBD"):
-        self.data_type = data_type
-        self.length = length  # Number of elements, not necessarily number of bytes.
+        1.  To represent an array, place the code between brackets:
 
-    def dynamic_format_code(self, max_size):
-        """Get the properly sized format code for the array."""
-        if self.length == "TBD":
-            self.length = max_size // struct.calcsize(self.data_type)
-        return f"{self.length}{self.data_type}"
-    
+                [U16].......indicates an array of unsigned 16-bit integers
+                [CHAR]......indicates an array of characters (i.e a string).
+
+            If you know the length of the array, you can specify it as well:
+
+                [U16]*2.....indicates an array of exactly two unsigned 16-bit integers
+
+            Otherwise the length will be dynamically determined based on the amount of available data 
+            remaining in the payload. Note that this means that the array must come at the end of the payload.
+            Note too that you cannot pre-indicate an array of only one element.  If you want one,
+            include it as a single element (e.g. U16) instead of an array (e.g. [U16] or [U16]*1).
+        
+        2.  A string is represented as [CHAR] in the format dictionary 
+            (but don't worry, it will be unpacked as a normal string).
+"""
 
 # ===================================================================
 # Section: Defining function to unpack binary data of a given format
@@ -45,7 +41,7 @@ def unpack_from_format(format_dict, data):
     Unpack binary data into usable form based on the provided format dictionary.
 
     Args:
-        format_dict: A dictionary mapping attribute names to struct format codes or ARR instances.
+        format_dict: A dictionary mapping attribute names to struct format codes or arrays thereof.
         data: The binary data to unpack.
 
     Returns:
@@ -55,11 +51,23 @@ def unpack_from_format(format_dict, data):
     pos = 0
     for attribute_name, format_code in format_dict.items():
 
-        if isinstance(format_code, ARR):
-            fmt = '<' + format_code.dynamic_format_code(len(data) - pos)
+        if isinstance(format_code, list):
+            data_type = format_code[0]  # Assume all elements are the same type
+            # If the array only has one value, assume you're supposed to fill it with the rest of the data 
+            if len(format_code) == 1:
+                length = (len(data) - pos) // struct.calcsize(data_type)
+            # Otherwise, assume the correct length has been specified
+            else:
+                length = len(format_code)
+            
+            fmt = '<' + f"{length}{data_type}"
             size = struct.calcsize(fmt)
-            value = struct.unpack(fmt, data[pos:pos+size])
-            if format_code.data_type == CHAR:
+            try:
+                # Attempt to unpack the data
+                value = struct.unpack(fmt, data[pos:pos+size])
+            except struct.error as e:
+                raise ValueError(f"Error unpacking data with length {len(data[pos:pos+size])} at position {pos}: {e}")
+            if data_type == CHAR:
                 # The value is a string
                 value = value[0].decode('ascii').rstrip("\x00")
             else:
@@ -93,7 +101,7 @@ class Header:
     """
 
     FORMAT = {
-        "br": ARR(CHAR, 2),     # Two bytes for the characters 'BR', hex value 0x42 0x52
+        "br": [CHAR]*2,
         "payload_length": U16,  # Two bytes for an integer representing the payload length (in bytes)
         "message_id": U16,      # Two bytes for an integer representing the message ID (the message type)
         "sender_id": U8,        # One byte for an integer representing the sender ID (typically 1 or 2 for the sidescan sonars)
@@ -135,19 +143,14 @@ class Payload:
     @staticmethod
     def create(message_id, payload_data):
         """Factory method to instantiate the correct subclass."""
-        if message_id == 2:
-            return NackMessage(payload_data)
-        elif message_id == 10:
-            return JSONMessage(payload_data)
-        elif message_id == 2198:
-            return OsMonoProfileMessage(payload_data)
-        # Uncomment the following (and replace "place_id_here") to add your own message type.
-        # elif message_id == place_id_here:
-        #     return ImplementYourOwnMessage(payload_data)
+        # Check if the message ID exists in the registry
+        if message_id in MESSAGE_REGISTRY:
+            # Create an instance of the appropriate message type
+            return MESSAGE_REGISTRY[message_id](payload_data)
         else:
             return Payload(payload_data, message_id)  # Default to base class
-
-    def __init__(self, payload_data, message_id, message_type="Unkown message type", format=None):
+            
+    def __init__(self, payload_data, message_id, message_type="Unknown message type", format=None):
         self.length = len(payload_data)  # In bytes
         self.message_id = message_id 
         self.message_type = message_type
@@ -175,18 +178,36 @@ class Packet:
         pos: The header start index within the provided data.
         data: The data that contains the packet.
     """
-    
+
     def __init__(self, pos, data):
         self.pos = pos
         self.header = Header(data[pos:pos + 8])
-        self.payload = Payload.create(self.header.message_id, data[pos + 8:pos + 8 + self.header.payload_length])
-        self.checksum = struct.unpack("<H", data[pos + 8 + self.header.payload_length:pos + 8 + self.header.payload_length + 2])[0]
-        self.corrupted = self.checksum != self.compute_checksum(data, pos, self.header.payload_length)    
-    
+
+        if len(data) - pos < 8 + self.header.payload_length + 2:
+            raise ValueError(f"Not enough data for full packet at position {pos} with header {self.header}")
+        
+        self.checksum = struct.unpack("<H", data[pos + 8 + self.header.payload_length : pos + 8 + self.header.payload_length + 2])[0]
+        self.corrupted = self.checksum != self.compute_checksum(data, pos, self.header.payload_length)
+        
+        if not self.corrupted:
+            try:
+                self.payload = Payload.create(self.header.message_id, data[pos + 8 : pos + 8 + self.header.payload_length])
+            except struct.error as e:
+                raise ValueError(f"Error unpacking payload for message with header {self.header}: {e}")
+        else:
+            self.payload = None
+
     def compute_checksum(self, data, pos, payload_length):
         """Compute checksum by summing header + payload (excluding checksum)."""
         packet_data = data[pos:pos + 8 + payload_length]  # Header + Payload
         return sum(packet_data) & 0xFFFF  # Truncate to 16 bits
+    
+    @classmethod
+    def from_bytes(cls, pos, data):
+        header = Header(data[pos:pos + 8])
+        if header.message_id not in MESSAGE_REGISTRY:
+            return None
+        return cls(pos, data)
 
     def __repr__(self):
         return f"Packet(header={self.header}, payload={self.payload}, checksum={self.checksum})"
@@ -196,6 +217,13 @@ class Packet:
 # Section: Defining Ping Protocol message types
 # ================================================
 
+MESSAGE_REGISTRY = {}
+
+def register(cls):
+    MESSAGE_REGISTRY[cls.MESSAGE_ID] = cls
+    return cls
+
+@register
 class NackMessage(Payload):
     """Subclass for message ID 2, representing a NACK (not acknowledged) message."""
 
@@ -203,7 +231,7 @@ class NackMessage(Payload):
     MESSAGE_TYPE = "Not acknowledged"
     FORMAT = {
         "nacked_id": U16,  # Two bytes for the message ID that was not acknowledged
-        "nack_message": ARR(CHAR)  # Remaining bytes as ASCII text indicating NACK condition
+        "nack_message": [CHAR]  # Remaining bytes as ASCII text indicating NACK condition
     }
     
     def __init__(self, payload_data):
@@ -211,13 +239,14 @@ class NackMessage(Payload):
                          message_type=self.MESSAGE_TYPE, format=self.FORMAT)
     
 
+@register
 class JSONMessage(Payload):
     """Subclass for message ID 10, representing a JSON header message."""
     
     MESSAGE_ID = 10
     MESSAGE_TYPE = "JSON header"
     FORMAT = {
-        "JSON_message": ARR(CHAR)  # Remaining bytes as ASCII text giving JSON header message
+        "JSON_message": [CHAR]  # Remaining bytes as ASCII text giving JSON header message
     }
     
     def __init__(self, payload_data):
@@ -225,6 +254,7 @@ class JSONMessage(Payload):
                          message_type=self.MESSAGE_TYPE, format=self.FORMAT)
     
 
+@register
 class OsMonoProfileMessage(Payload):
     """Subclass for message ID 2198, representing an os_mono_profile message for the Omniscan 450."""
     
@@ -246,8 +276,8 @@ class OsMonoProfileMessage(Payload):
         "max_pwr_db": FLOAT,
         "min_pwr_db": FLOAT,
         "transducer_heading_deg": FLOAT,
-        "vehicle_heading_deg": FLOAT,
-        "pwr_results": ARR(U16)     # An array of return strength measurements taken 
+        "vehicle_heading_deg": FLOAT,	
+        "pwr_results": [U16]     # An array of return strength measurements taken 
                                     # at regular intervals across the scan region. 
                                     # The first element is the closest measurement to the sensor, 
                                     # and the last element is the farthest measurement in the scanned range. 
@@ -260,17 +290,17 @@ class OsMonoProfileMessage(Payload):
                          message_type=self.MESSAGE_TYPE, format=self.FORMAT)
 
 
+@register
 class ImplementYourOwnMessage(Payload):
     """Subclass for your custom message ID, representing a custom message."""
-    # Note: you must also make the indicated 
-    # alterations to Payload.create()
+    # Note: you must also include @register above this class definition to place it in the MESSAGE_REGISTRY.
 
     MESSAGE_ID = 99999  # Replace with your custom message ID
     MESSAGE_TYPE = "Your custom message type"
     FORMAT = {
         "your_field1": U16,  # e.g. Two bytes for your custom field 1
         "your_field2": U8,   # e.g. One byte for your custom field 2
-        "your_message": ARR(CHAR)  # e.g. Remaining bytes as ASCII text giving your custom message data
+        "your_message": [CHAR]  # e.g. Remaining bytes as ASCII text giving your custom message data
     }
     
     # No need to change __init__ at all!
@@ -284,6 +314,10 @@ class ImplementYourOwnMessage(Payload):
 # ==========================================================================
 
 def parse_svlog_file(filename, included_ids=None, excluded_ids=None, max_packets=None):
+    """
+    Parse a .svlog file and extract message packets.
+    Note: this function will only extract packets of known message types.
+    """
     with open(filename, "rb") as f:
         data = f.read()  # Read the entire binary file
 
@@ -293,13 +327,15 @@ def parse_svlog_file(filename, included_ids=None, excluded_ids=None, max_packets
     packets = []
     for pos in positions:  
         try:
-            packet = Packet(pos, data)
-            if packet.corrupted:
-                print(f"Invalid checksum for packet at byte {pos}")
+            packet = Packet.from_bytes(pos, data)
+            if packet is None:
                 continue
             if included_ids is not None and packet.header.message_id not in included_ids:  # Only include wanted message IDs
                 continue
             if excluded_ids is not None and packet.header.message_id in excluded_ids:  # Don't include unwanted message IDs
+                continue
+            if packet.corrupted:
+                print(f"Invalid checksum for packet at byte {pos}")
                 continue
             packets.append(packet)
             if max_packets is not None and len(packets) == max_packets:  # Cap the number of packets included in the output
@@ -311,29 +347,12 @@ def parse_svlog_file(filename, included_ids=None, excluded_ids=None, max_packets
 
 
 
-
 if __name__ == "__main__":
     # Example usage
-    filename = "data.svlog"  # Replace with your binary file
-    with open(filename, "rb") as f:
-        data = f.read()  # Read the entire binary file
-
-    pattern = re.compile(rb"\x42\x52")  # Match "BR"
-    positions = [match.start() for match in pattern.finditer(data)]
-
-    packets = []
-    for pos in positions:  
-        try:
-            packet = Packet(pos, data)
-            if packet.header.message_id not in [2, 10, 2198]:  # Only include wanted message IDs
-                continue
-            packets.append(packet)
-            if len(packets) == 10:  # Limit to first 10 packets for demonstration
-                break
-        except ValueError as e:
-            print(f"Error parsing packet at byte {pos}: {e}")
+    filename = "2025-03-24-12-14.svlog"  # Replace with your binary file
+    packets = parse_svlog_file(filename)
     
-    output_filename  = "message_logs.txt"  # Output file name 
+    output_filename  = "message_log_apr14.txt"  # Output file name 
     with open(output_filename, "w") as output_file:
         output_file.truncate(0)  # Erase the file content before writing
         output_file.write(f"Message logs:\n\n")
