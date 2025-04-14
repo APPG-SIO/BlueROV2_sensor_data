@@ -1,4 +1,4 @@
-# BlueROV2
+# BlueROV2 Sensor Data
 This repository is for the handling of all things BlueROV2 related, including sensors in the payload
 
 ## Overview
