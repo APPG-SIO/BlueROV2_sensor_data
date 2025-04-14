@@ -13,13 +13,19 @@
 
 All the hard work has been done for you here. If you want to, you could download the files below and follow the instructions and get your svlog turned into something readable in no time. However, if you want to do something else with the svlog files, or understand a bit better what is going on under the hood, you can take this adventure a little further and learn a bit more. Mostly, this page hopes to provide you with working tools and instructions to understand and decode svlog files. In other words: **SVLOG for dummies**. 
 
+### What is an .svlog?
+It is a binary file in a format created by Cerulean Sonar, which is similar to (but not the same as) the Ping Protocol format developed by Blue Robotics. It is simply a record of all of the messages that the Omniscan450s and computer send to eachother. There are tons of message types; the messages are not just data. So, you have to do some sifting. 
+
 ### Download the following files
 - [csv_writer.py](csv_writer.py)
 - [svlog_parser.py](svlog_parser.py)
 - [decode_payload_csv.py](decode_payload_csv.py)
 
 ## Using the files above is simple enough
-In terminal, navigate to the folder containing the files you just downloaded and you can run csv_writer.py, which calls on svlog_parser.py with the following line of code
+
+[svlog_parser.py](svlog_parser.py) is doing the heavy lifting here. It takes the binary svlog files and outputs all the instances of a message type (or types) that you ask it to between the omniscan450(s) and the computer to a text file. If you would like a text file, you can run this code directly in something like Visual Studio code and change the input file name at the very bottom of the script under main to the script you would like it to parse. The script is currently configured to output the text file to message_logs.txt. You can change this too.
+
+If you would like a csv of the messages, you can run [csv_writer.py](csv_writer.py) from the terminal, which calls on svlog_parser.py with the following line of code
 
 ```bash
 python3 csv_write.py -h #tells you the argument options, but for easiness' sake I'll tell you here
