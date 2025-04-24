@@ -13,6 +13,8 @@
 
 All the hard work has been done for you here. If you want to, you could download the files below and follow the instructions and get your svlog turned into something readable in no time. However, if you want to do something else with the svlog files, or understand a bit better what is going on under the hood, you can take this adventure a little further and learn a bit more. Mostly, this page hopes to provide you with working tools and instructions to understand and decode svlog files. In other words: **SVLOG for dummies**. 
 
+<img width="1115" alt="Screenshot 2025-03-26 at 3 10 24 PM" src="https://github.com/user-attachments/assets/547d2a21-2e7e-445f-8c9d-1b788980c4fe" />
+
 ### What is an .svlog?
 It is a binary file in a format created by Cerulean Sonar, which is similar to (but not the same as) the Ping Protocol format developed by Blue Robotics. It is simply a record of all of the messages that the Omniscan450s and computer send to eachother during the recorded data session. There are tons of message types; the messages are not just data. So, you have to do some sifting. 
 
