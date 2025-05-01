@@ -37,7 +37,7 @@ To run the file, just type [mavlogdump.py](http://mavlogdump.py) with the approp
 ```bash
 mavlogdump.py -h # This will tell you more about the file's options
 mavlogdump.py path/to/tlog/file --show-types  # Will tell you the data columns that the tlog file has
-mavlogdump.py --format csv --types TIMESYNC,RAW_IMU,ATTITUDE,SCALED_IMU2,GPS_RAW_INT,GLOBAL_POSITION_INT  path/to/file.tlog > output/path/file.csv #This will put out these types into an output .csv file  
+mavlogdump.py --format csv --types TIMESYNC,RAW_IMU,ATTITUDE,SCALED_IMU2,GPS_RAW_INT,GLOBAL_POSITION_INT,AHRS,AHRS2,RANGEFINDER,EKF_STATUS_REPORT,DISTANCE_SENSOR  path/to/file.tlog > output/path/file.csv #This will put out these types into an output .csv file  
 ```
 
 these are the data columns that the .tlog files are able to put out (that I’ve seen):
